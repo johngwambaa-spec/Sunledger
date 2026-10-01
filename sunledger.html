@@ -1,0 +1,1267 @@
+<title>Sunledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#f6f2e9;
+    --surface:#fffdf8;
+    --surface-alt:#efe7d4;
+    --border:#ddd0b3;
+    --ink:#211d15;
+    --ink-soft:#6b6350;
+    --ink-faint:#9a8f76;
+    --accent:#c96a17;
+    --accent-ink:#fffaf1;
+    --accent-soft:#f4dfc0;
+    --good:#2f7d4f;
+    --good-soft:#dcefe1;
+    --good-border:#b4d9c1;
+    --warn:#a24a1f;
+    --shade:#7c8a4e;
+    --shadow: 0 1px 2px rgba(33,29,21,.06), 0 6px 20px -10px rgba(33,29,21,.18);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#161310;
+      --surface:#1e1a15;
+      --surface-alt:#26211a;
+      --border:#3c3427;
+      --ink:#f3ede0;
+      --ink-soft:#b9ae96;
+      --ink-faint:#867b64;
+      --accent:#e8934a;
+      --accent-ink:#1d1006;
+      --accent-soft:#3a2a17;
+      --good:#57bd80;
+      --good-soft:#1c3327;
+      --good-border:#2f5a41;
+      --warn:#e58a5a;
+      --shade:#9caf68;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#161310;
+    --surface:#1e1a15;
+    --surface-alt:#26211a;
+    --border:#3c3427;
+    --ink:#f3ede0;
+    --ink-soft:#b9ae96;
+    --ink-faint:#867b64;
+    --accent:#e8934a;
+    --accent-ink:#1d1006;
+    --accent-soft:#3a2a17;
+    --good:#57bd80;
+    --good-soft:#1c3327;
+    --good-border:#2f5a41;
+    --warn:#e58a5a;
+    --shade:#9caf68;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.55);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:24px 48px;
+    max-width:880px;
+    margin:0 auto;
+  }
+  h1,h2,h3{font-family:"Fraunces", Georgia, serif; text-wrap:balance; margin:0;}
+  .mono, .num{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+
+  header.app-head{
+    display:flex; flex-direction:column; gap:6px; margin-bottom:22px;
+  }
+  .brand-row{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .brand-row h1{font-size:clamp(28px,5vw,36px); font-weight:600; letter-spacing:-.01em;}
+  .theme-toggle{
+    margin-left:auto; border:1px solid var(--border); background:var(--surface-alt); color:var(--ink);
+    width:36px; height:36px; border-radius:10px; font-size:16px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:background .15s ease;
+  }
+  .theme-toggle:hover{background:var(--surface);}
+  .theme-toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .mode-toggle{display:flex; gap:8px; margin-bottom:18px;}
+  .mode-toggle button{
+    flex:0 0 auto; border:1.5px solid var(--border); background:var(--surface-alt); color:var(--ink-soft);
+    font-family:inherit; font-weight:600; font-size:13px; padding:8px 16px; border-radius:999px; cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .mode-toggle button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .mode-toggle button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .tagline{color:var(--ink-soft); font-size:14px; max-width:60ch;}
+
+  /* Breaker-style tab switcher */
+  .tabbar{
+    display:flex; gap:4px; background:var(--surface-alt); border:1px solid var(--border);
+    border-radius:12px; padding:4px; margin-bottom:24px;
+  }
+  .tabbar button{
+    flex:1; appearance:none; border:none; background:transparent; color:var(--ink-soft);
+    font-family:inherit; font-weight:600; font-size:14px; padding:11px 12px; border-radius:9px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .tabbar button[aria-selected="true"]{
+    background:var(--surface); color:var(--ink); box-shadow:var(--shadow);
+  }
+  .tabbar button .dot{width:8px; height:8px; border-radius:50%; background:currentColor; opacity:.35;}
+  .tabbar button[aria-selected="true"] .dot{background:var(--accent); opacity:1;}
+  .tabbar button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  section.panel{display:none;}
+  section.panel.active{display:block;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:18px 20px; box-shadow:var(--shadow); margin-bottom:18px;
+  }
+  .card > h2{font-size:19px; font-weight:600; margin-bottom:4px;}
+  .card .sub{color:var(--ink-soft); font-size:13px; margin-bottom:14px;}
+
+  /* Appliance table */
+  .table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:10px;}
+  table{width:100%; border-collapse:collapse; min-width:520px;}
+  thead th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-faint); font-weight:600; padding:9px 10px; background:var(--surface-alt);
+    border-bottom:1px solid var(--border); position:sticky; top:0;
+  }
+  tbody td{padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.num-cell, th.num-col{text-align:right;}
+  input.name-in{
+    width:100%; min-width:120px; border:1px solid transparent; background:transparent; color:var(--ink);
+    font-family:inherit; font-size:14px; padding:6px 6px; border-radius:6px;
+  }
+  input.qty-in, input.w-in{
+    width:64px; border:1px solid var(--border); background:var(--surface); color:var(--ink);
+    font-family:"IBM Plex Mono",monospace; font-size:13px; padding:6px 6px; border-radius:6px; text-align:right;
+  }
+  input.name-in:hover, input.name-in:focus{border-color:var(--border); background:var(--surface-alt);}
+  input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .subtotal-cell{font-family:"IBM Plex Mono",monospace; font-weight:600;}
+  .rm-btn{
+    border:none; background:transparent; color:var(--ink-faint); cursor:pointer; font-size:16px;
+    width:26px; height:26px; border-radius:6px; line-height:1;
+  }
+  .rm-btn:hover{background:var(--surface-alt); color:var(--warn);}
+  .add-row-btn{
+    margin-top:10px; border:1px dashed var(--border); background:transparent; color:var(--ink-soft);
+    font-family:inherit; font-size:13px; font-weight:600; padding:8px 14px; border-radius:8px; cursor:pointer;
+  }
+  .add-row-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  /* Readout tiles */
+  .tiles{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;}
+  @media (max-width:520px){ .tiles{grid-template-columns:1fr;} }
+  .tile{
+    border-radius:14px; padding:16px 18px; text-align:left; cursor:pointer;
+    border:1.5px solid var(--border); background:var(--surface-alt);
+    font-family:inherit; display:flex; flex-direction:column; gap:6px;
+    transition:box-shadow .15s ease, transform .1s ease;
+  }
+  .tile:hover{box-shadow:var(--shadow);}
+  .tile:active{transform:translateY(1px);}
+  .tile .label{font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:700; color:var(--ink-faint);}
+  .tile .value{font-family:"IBM Plex Mono",monospace; font-size:clamp(28px,6vw,38px); font-weight:700; line-height:1;}
+  .tile .hint{font-size:12.5px; color:var(--ink-soft);}
+  .tile.tile-primary{
+    background:var(--good-soft); border-color:var(--good-border);
+  }
+  .tile.tile-primary .value{color:var(--good);}
+  .tile.tile-secondary .value{color:var(--ink);}
+  .tile .chevron{font-size:11px; color:var(--ink-faint); margin-top:2px;}
+
+  /* Dashboard bar charts */
+  .dash-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media (max-width:600px){ .dash-grid{grid-template-columns:1fr;} }
+  .dash-chart{display:flex; flex-direction:column; gap:10px;}
+  .dash-chart-title{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint);}
+  .dash-bar-row{display:grid; grid-template-columns:92px 1fr auto; align-items:center; gap:10px; padding:3px 0; border-radius:6px;}
+  .dash-bar-label{font-size:12.5px; color:var(--ink-soft);}
+  .dash-bar-track{height:16px; background:var(--border); border-radius:4px; overflow:hidden;}
+  .dash-bar-fill{height:100%; border-radius:0 4px 4px 0; min-width:2px; transition:width .3s ease, filter .15s ease;}
+  .dash-bar-fill.dash-fill-good{background:var(--good);}
+  .dash-bar-fill.dash-fill-neutral{background:var(--ink-soft);}
+  .dash-bar-row:hover .dash-bar-fill{filter:brightness(1.12);}
+  .dash-bar-value{font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-weight:600; color:var(--ink); text-align:right; min-width:76px;}
+
+  .info-tip{
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    width:14px; height:14px; margin-left:2px; border-radius:50%; border:1px solid currentColor;
+    font-size:9px; font-weight:700; font-style:normal; text-transform:none; letter-spacing:normal;
+    cursor:help; vertical-align:middle;
+  }
+  .info-tip-bubble{
+    position:absolute; left:0; top:calc(100% + 8px);
+    width:260px; max-width:min(78vw, 260px); background:var(--ink); color:var(--bg);
+    font-size:12px; font-weight:500; text-transform:none; letter-spacing:normal;
+    line-height:1.45; padding:10px 12px; border-radius:8px; box-shadow:var(--shadow);
+    opacity:0; visibility:hidden; transition:opacity .15s ease; pointer-events:none; z-index:20;
+    text-align:left;
+  }
+  .tile-primary:hover .info-tip-bubble, .tile-primary:focus-visible .info-tip-bubble{
+    opacity:1; visibility:visible;
+  }
+
+  .rv-shortfall-box{
+    border:1.5px solid var(--warn); border-radius:10px; padding:12px 14px; margin:10px 0;
+    display:flex; flex-direction:column; gap:6px; background:var(--surface-alt);
+  }
+  .rv-shortfall-title{font-weight:700; font-size:13.5px; color:var(--warn);}
+  .pb-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:4px;}
+  @media (max-width:520px){ .pb-grid{grid-template-columns:1fr;} }
+  .pb-col{
+    border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:var(--surface);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .pb-col-primary{border-color:var(--good-border); background:var(--good-soft);}
+  .pb-title{font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint);}
+  .pb-col-primary .pb-title{color:var(--good);}
+  .pb-stat{display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:13.5px;}
+  .pb-stat span{color:var(--ink-soft);}
+  .pb-stat b{font-family:"IBM Plex Mono",monospace; font-size:15px; color:var(--ink);}
+  .battery-recommend-row{display:flex; gap:22px; flex-wrap:wrap; margin:4px 0 2px;}
+  .battery-recommend-value{font-family:"IBM Plex Mono",monospace; font-size:24px; font-weight:700; color:var(--good);}
+  .factor-panel{
+    border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--surface-alt);
+    margin-bottom:16px; display:grid; gap:14px;
+  }
+  .factor-row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px;}
+  .factor-row label{font-size:13.5px; font-weight:600;}
+  .factor-row .fdesc{font-size:12px; color:var(--ink-soft); font-weight:400; display:block; margin-top:1px;}
+  .factor-row input[type="range"]{width:100%; accent-color:var(--accent);}
+  .factor-val{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; min-width:42px; text-align:right;}
+  .combined-line{
+    font-size:13px; color:var(--ink-soft); border-top:1px dashed var(--border); padding-top:10px;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;
+  }
+  .combined-line b{color:var(--ink); font-family:"IBM Plex Mono",monospace;}
+
+  .field-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:12px; margin-bottom:14px;}
+  @media (max-width:560px){ .field-grid{grid-template-columns:1fr 1fr;} }
+  .field label{display:block; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; color:var(--ink-faint); margin-bottom:5px;}
+  .field select, .field input[type="number"]{
+    width:100%; border:1px solid var(--border); background:var(--surface); color:var(--ink);
+    font-family:"IBM Plex Mono",monospace; font-size:14px; padding:8px 9px; border-radius:8px;
+  }
+
+  /* Financing cards */
+  .fin-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:600px){ .fin-grid{grid-template-columns:1fr;} }
+  .fin-card{border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--surface-alt); display:flex; flex-direction:column; gap:8px;}
+  .fin-card h3{font-size:16px; font-weight:600;}
+  .fin-tag{align-self:flex-start; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; background:var(--accent-soft); color:var(--accent); padding:3px 8px; border-radius:999px;}
+  .fin-card dl{display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:13px; margin:0;}
+  .fin-card dt{color:var(--ink-faint); font-weight:600;}
+  .fin-card dd{margin:0; color:var(--ink);}
+  .fin-best{font-size:12.5px; color:var(--ink-soft); border-top:1px dashed var(--border); padding-top:8px;}
+
+  .installer-toolbar{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;}
+  .installer-toolbar input[type="text"]{
+    border:1px solid var(--border); background:var(--surface); color:var(--ink); font-family:inherit;
+    font-size:13px; padding:8px 10px; border-radius:8px; min-width:180px;
+  }
+  .example-badge{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint); background:var(--surface); border:1px solid var(--border); padding:2px 6px; border-radius:6px;}
+  .disclaimer{font-size:12px; color:var(--ink-faint); margin-top:10px; line-height:1.5;}
+  footer.app-foot{text-align:center; color:var(--ink-faint); font-size:12px; margin-top:28px;}
+</style>
+
+<header class="app-head">
+  <div class="brand-row">
+    <h1>☀ Sunledger</h1>
+    <button id="theme-toggle-btn" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+  </div>
+  <p class="tagline" id="app-tagline">Tally your loads, size the system with headroom, and shop the install — one ledger for the watts and the dollars.</p>
+</header>
+
+<div class="mode-toggle" role="group" aria-label="System type">
+  <button id="mode-btn-home" type="button" aria-pressed="true">🏠 Home</button>
+  <button id="mode-btn-rv" type="button" aria-pressed="false">🚐 RV</button>
+</div>
+
+<div class="tabbar" role="tablist" aria-label="Sunledger sections">
+  <button id="tab-btn-sizing" role="tab" aria-selected="true" aria-controls="panel-sizing"><span class="dot"></span>Sizing &amp; Placement</button>
+  <button id="tab-btn-finance" role="tab" aria-selected="false" aria-controls="panel-finance"><span class="dot"></span>Financing &amp; Installers</button>
+</div>
+
+<section id="panel-sizing" class="panel active" role="tabpanel" aria-labelledby="tab-btn-sizing">
+
+  <div class="card">
+    <h2>Appliances &amp; pumps</h2>
+    <p class="sub">Running watts × quantity gives each item's steady draw. Surge watts is the instantaneous peak while a motor starts — same as running watts for purely resistive loads (heaters, elements). Backup duty % is how much of the overnight backup window it actually runs — that's what sizes the battery, separately from the peak sizing above.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Appliance / pump</th>
+            <th class="num-col">Running W</th>
+            <th class="num-col">Surge W</th>
+            <th class="num-col">Qty</th>
+            <th class="num-col">Backup duty %</th>
+            <th class="num-col">Subtotal (W)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="appliance-body"></tbody>
+      </table>
+    </div>
+    <datalist id="appliance-catalog-list"></datalist>
+    <button class="add-row-btn" id="add-appliance-btn" type="button">+ Add appliance</button>
+    <p class="sub" style="margin:8px 0 0;">Pick from the dropdown (EV chargers, pumps, kitchen &amp; laundry loads and more) or type your own — typical running/surge wattage and backup duty % fill in automatically and you can still override any of them. Figures are planning estimates from common appliance/generator-sizing references — check your unit's nameplate for the exact rating.</p>
+  </div>
+
+  <div class="tiles">
+    <button class="tile tile-primary" id="tile-adjusted" type="button" aria-expanded="true" aria-controls="factor-panel">
+      <span class="label">① Recommended system sizing
+        <span class="info-tip">ⓘ<span class="info-tip-bubble">Multiple cloudy days in a row, or short winter daylight, are the real constraint on true 100% off-grid living — proper load management is needed no matter how big the array or battery is.</span></span>
+      </span>
+      <span class="value num" id="adjusted-value">0 W</span>
+      <span class="hint" id="hint-adjusted">Everyday loads + one big load at a time + its surge, buffered for clouds &amp; wiring loss</span>
+      <span class="chevron" id="tile-chevron">▾ tap to view buffers</span>
+    </button>
+    <div class="tile tile-secondary" id="tile-naive">
+      <span class="label">② Naive raw total</span>
+      <span class="value num" id="naive-value">0 W</span>
+      <span class="hint" id="hint-naive">Everyday loads + one big load running — no surge or environmental buffer added</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Dashboard</h2>
+    <p class="sub">Same numbers as above, side by side — watts and battery capacity are different units, so they get their own charts rather than one misleading scale.</p>
+    <div class="dash-grid">
+      <div class="dash-chart">
+        <div class="dash-chart-title">System sizing (W)</div>
+        <div class="dash-bar-row">
+          <span class="dash-bar-label">Recommended</span>
+          <div class="dash-bar-track"><div class="dash-bar-fill dash-fill-good" id="dash-bar-sizing-rec" style="width:0%" title=""></div></div>
+          <span class="dash-bar-value" id="dash-val-sizing-rec">0 W</span>
+        </div>
+        <div class="dash-bar-row">
+          <span class="dash-bar-label">Naive</span>
+          <div class="dash-bar-track"><div class="dash-bar-fill dash-fill-neutral" id="dash-bar-sizing-naive" style="width:0%" title=""></div></div>
+          <span class="dash-bar-value" id="dash-val-sizing-naive">0 W</span>
+        </div>
+      </div>
+      <div class="dash-chart">
+        <div class="dash-chart-title">Backup capacity (kWh)</div>
+        <div class="dash-bar-row">
+          <span class="dash-bar-label">Recommended (×3)</span>
+          <div class="dash-bar-track"><div class="dash-bar-fill dash-fill-good" id="dash-bar-batt-rec" style="width:0%" title=""></div></div>
+          <span class="dash-bar-value" id="dash-val-batt-rec">0 kWh</span>
+        </div>
+        <div class="dash-bar-row">
+          <span class="dash-bar-label">Baseline</span>
+          <div class="dash-bar-track"><div class="dash-bar-fill dash-fill-neutral" id="dash-bar-batt-base" style="width:0%" title=""></div></div>
+          <span class="dash-bar-value" id="dash-val-batt-base">0 kWh</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Panels &amp; battery sizing</h2>
+    <p class="sub">Panel wattage sets how many panels you need. Autonomy, chemistry and voltage set how big the battery bank needs to be — both update live for the recommended and naive numbers above.</p>
+    <div class="field-grid">
+      <div class="field">
+        <label for="panel-watts">Panel wattage</label>
+        <select id="panel-watts">
+          <option value="350">350 W</option>
+          <option value="400">400 W</option>
+          <option value="450" selected>450 W</option>
+          <option value="500">500 W</option>
+          <option value="550">550 W</option>
+          <option value="600">600 W</option>
+          <option value="650">650 W</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="autonomy-hours">Backup autonomy (hours)</label>
+        <input type="number" id="autonomy-hours" min="1" max="72" step="1" value="8">
+      </div>
+      <div class="field">
+        <label for="battery-type">Battery chemistry</label>
+        <select id="battery-type">
+          <option value="0.9" data-name="Lithium (LiFePO4)">Lithium (LiFePO₄) — 90% DoD</option>
+          <option value="0.5" data-name="AGM">AGM sealed lead-acid — 50% DoD</option>
+          <option value="0.5" data-name="Flooded lead-acid">Flooded lead-acid — 50% DoD</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="bank-voltage">Bank voltage</label>
+        <select id="bank-voltage">
+          <option value="12">12V</option>
+          <option value="24" selected>24V</option>
+          <option value="48">48V</option>
+        </select>
+      </div>
+      <div class="field" id="pb-rv-length-field" style="display:none;">
+        <label for="pb-rv-length">RV length</label>
+        <select id="pb-rv-length">
+          <option value="20">20 ft — camper van / truck camper</option>
+          <option value="25">25 ft — small travel trailer</option>
+          <option value="30" selected>30 ft — travel trailer / Class C</option>
+          <option value="35">35 ft — fifth wheel / Class A</option>
+          <option value="40">40 ft — large Class A / fifth wheel</option>
+        </select>
+      </div>
+    </div>
+    <div class="combined-line" id="pb-rv-fit-line" style="display:none; border-top:none; padding-top:0;">
+      <span>Max panels this roof fits (est. 8 ft wide usable roof)</span>
+      <b id="pb-rv-fit-count">—</b>
+    </div>
+    <div class="rv-shortfall-box" id="pb-rv-shortfall" style="display:none;">
+      <div class="rv-shortfall-title">⚠ Roof can't fit enough panels for the recommended load</div>
+      <div class="pb-stat"><span>Roof supports</span><b id="pb-rv-shortfall-pct">—</b></div>
+      <div class="pb-stat"><span>Production shortfall</span><b id="pb-rv-shortfall-watts">—</b></div>
+      <div class="pb-stat"><span>Suggested bridge reserve</span><b id="pb-rv-bridge-batt">—</b></div>
+      <p class="disclaimer" style="margin:6px 0 0;">That extra battery only bridges occasional gaps — cloudy days, peak draw — using energy already stored. It can't fix a shortfall this size day after day; that needs a generator, shore power, or more mounting area (ground or awning-mounted panels), not just a bigger battery.</p>
+    </div>
+    <div class="pb-grid">
+      <div class="pb-col pb-col-primary">
+        <div class="pb-title">① Recommended sizing</div>
+        <div class="pb-stat"><span>Panels needed</span><b id="pb-panels-adjusted">0</b></div>
+      </div>
+      <div class="pb-col">
+        <div class="pb-title">② Naive raw total</div>
+        <div class="pb-stat"><span>Panels needed</span><b id="pb-panels-naive">0</b></div>
+      </div>
+    </div>
+    <p class="disclaimer" style="margin:8px 0 0;">Panel count = watts ÷ panel wattage, rounded up — this uses the full peak sizing above, since the array has to handle the worst-case instant regardless of how rarely it happens.</p>
+
+    <div class="pb-col pb-col-primary" style="margin-top:14px;">
+      <div class="pb-title">Backup capacity recommended
+        <span class="info-tip">ⓘ<span class="info-tip-bubble">3× the baseline overnight draw below, to buffer for cloudy mornings — solar isn't producing yet when you wake — and occasional heavier night use beyond the typical duty cycle.</span></span>
+      </div>
+      <div class="battery-recommend-row">
+        <span class="battery-recommend-value" id="pb-batt-rec-kwh">0 kWh</span>
+        <span class="battery-recommend-value" id="pb-batt-rec-ah">0 Ah</span>
+      </div>
+      <div class="pb-stat" style="border-top:1px dashed var(--border); margin-top:10px; padding-top:8px;"><span>Baseline overnight draw (unbuffered)</span><b id="pb-batt-night">0 kWh</b></div>
+      <div class="pb-stat"><span>Baseline amp-hours</span><b id="pb-batt-ah-night">0 Ah</b></div>
+      <p class="disclaimer" style="margin:4px 0 0;">Baseline built from each appliance's own <b>Backup duty %</b> in the table above (times its running watts and quantity), not the peak sizing — a well pump or dryer barely runs overnight, a fridge or router runs far more. Edit any appliance's duty % to match your real routine.</p>
+    </div>
+  </div>
+
+  <div class="factor-panel" id="factor-panel">
+    <div class="factor-row">
+      <label>Cloudy-day buffer
+        <span class="fdesc">Extra headroom for reduced irradiance on overcast days</span>
+      </label>
+      <span class="factor-val" id="cloudy-val">20%</span>
+    </div>
+    <input type="range" min="0" max="60" step="5" id="cloudy-range" style="grid-column:1/-1; accent-color:var(--accent);">
+
+    <div class="factor-row">
+      <label>Wiring &amp; connection loss
+        <span class="fdesc">Resistive loss across wire runs, connectors and terminals</span>
+      </label>
+      <span class="factor-val" id="wiring-val">10%</span>
+    </div>
+    <input type="range" min="0" max="30" step="5" id="wiring-range" style="grid-column:1/-1; accent-color:var(--accent);">
+
+    <div class="combined-line" id="large-load-line" style="border-top:none; padding-top:0;">
+      <span id="large-load-label">Big loads — only one assumed running at a time</span>
+      <b id="large-load-detail">—</b>
+    </div>
+
+    <div class="combined-line" id="surge-line">
+      <span>Largest single motor surge in that scenario (only one starts at a time)</span>
+      <b id="surge-detail">—</b>
+    </div>
+
+    <div class="combined-line">
+      <span>Cloudy + wiring buffer applied on top</span>
+      <b id="combined-mult">1.32×</b>
+    </div>
+  </div>
+
+
+</section>
+
+<section id="panel-finance" class="panel" role="tabpanel" aria-labelledby="tab-btn-finance">
+
+  <div class="card">
+    <h2 id="fin-title">Financing options</h2>
+    <p class="sub" id="fin-sub">All four options here mean you own the system outright — the difference is what you borrow against.</p>
+    <p class="disclaimer" style="margin-top:0; margin-bottom:14px;"><b>The 30% federal residential solar tax credit (Section 25D) expired December 31, 2025</b> and is no longer available — it isn't factored into any option below. Check separately for any remaining state, utility or local incentives in your area.</p>
+    <div class="fin-grid" id="fin-grid"></div>
+    <p class="disclaimer">General guidance only — rates, terms and card offers vary by lender and change over time. Confirm current figures with a tax professional and your installer's quote.</p>
+  </div>
+
+  <div class="card">
+    <h2 id="installer-title">Local installers</h2>
+    <p class="sub" id="installer-sub">Nationwide and regional installers with typical price-per-watt ranges — add your own local quotes alongside them.</p>
+    <div class="installer-toolbar">
+      <input type="text" id="installer-filter" placeholder="Filter by state or region (e.g. TX, Southeast)">
+      <button class="add-row-btn" id="add-installer-btn" type="button">+ Add installer</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Installer</th>
+            <th>Brands serviced</th>
+            <th>Region</th>
+            <th>Contact</th>
+            <th class="num-col">Price range ($/W)</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="installer-body"></tbody>
+      </table>
+    </div>
+    <p class="disclaimer">Rows marked <span class="example-badge">Example</span> are illustrative national/regional installers, not a live directory — pricing, coverage and availability change over time. Get 3+ local quotes before committing. Nationwide installers always show; the filter narrows regional ones by what you type.</p>
+  </div>
+
+</section>
+
+<footer class="app-foot">Sunledger — a sizing worksheet, not an engineering stamp. Confirm final specs with a licensed solar installer.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  function loadLS(key, fallback){
+    try{
+      const raw = localStorage.getItem("sunledger:"+key);
+      if(!raw) return fallback;
+      return JSON.parse(raw);
+    }catch(e){ return fallback; }
+  }
+  function saveLS(key, val){
+    try{ localStorage.setItem("sunledger:"+key, JSON.stringify(val)); }catch(e){}
+  }
+
+  // Shared between the load calculator and the panel-placement diagram.
+  let lastAdjustedWatts = 0;
+
+  function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
+
+  // "home" or "rv" — selects which default data set and storage namespace everything below uses.
+  let mode = loadLS("mode", "home");
+
+  // ---------- Theme toggle ----------
+  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    themeToggleBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+  }
+  let theme = loadLS("theme", "dark");
+  applyTheme(theme);
+  themeToggleBtn.addEventListener("click", ()=>{
+    theme = theme === "dark" ? "light" : "dark";
+    saveLS("theme", theme);
+    applyTheme(theme);
+  });
+
+  // ---------- Tabs ----------
+  const tabBtnSizing = document.getElementById("tab-btn-sizing");
+  const tabBtnFinance = document.getElementById("tab-btn-finance");
+  const panelSizing = document.getElementById("panel-sizing");
+  const panelFinance = document.getElementById("panel-finance");
+  function selectTab(which){
+    const sizing = which === "sizing";
+    tabBtnSizing.setAttribute("aria-selected", sizing ? "true" : "false");
+    tabBtnFinance.setAttribute("aria-selected", sizing ? "false" : "true");
+    panelSizing.classList.toggle("active", sizing);
+    panelFinance.classList.toggle("active", !sizing);
+    saveLS("activeTab", which);
+  }
+  tabBtnSizing.addEventListener("click", ()=>selectTab("sizing"));
+  tabBtnFinance.addEventListener("click", ()=>selectTab("finance"));
+
+  // ---------- Appliances ----------
+  // Running watts = typical steady draw. Surge watts = instantaneous peak while a motor/compressor
+  // starts; equal to running watts for purely resistive loads (heating elements, chargers) that have
+  // no meaningful inrush. Figures follow common appliance & generator-sizing reference charts —
+  // always confirm against the specific unit's nameplate.
+  const defaultAppliancesByMode = {
+    home: [
+      {name:"Water well pump", watts:1500, surge:4500, qty:1, nightPct:5, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Refrigerator", watts:700, surge:2200, qty:1, nightPct:40, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Chest freezer", watts:350, surge:1500, qty:1, nightPct:30, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Sump pump", watts:800, surge:2400, qty:1, nightPct:3, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Window AC unit", watts:1200, surge:3600, qty:1, nightPct:15, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"LED lighting", watts:10, surge:10, qty:12, nightPct:15, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"TV", watts:120, surge:120, qty:1, nightPct:5, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Laptop", watts:65, surge:65, qty:1, nightPct:10, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Router / modem", watts:15, surge:15, qty:1, nightPct:100, wattsTouched:false, surgeTouched:false, nightPctTouched:false}
+    ],
+    rv: [
+      {name:"RV rooftop AC (13,500 BTU)", watts:1400, surge:3600, qty:1, nightPct:15, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"RV refrigerator (12V compressor)", watts:60, surge:180, qty:1, nightPct:40, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"RV water pump (12V)", watts:50, surge:150, qty:1, nightPct:5, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"RV furnace fan", watts:200, surge:500, qty:1, nightPct:20, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Microwave", watts:1200, surge:1200, qty:1, nightPct:2, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Roof vent fan", watts:30, surge:60, qty:1, nightPct:15, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"LED lighting", watts:8, surge:8, qty:8, nightPct:15, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"TV", watts:60, surge:60, qty:1, nightPct:5, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Laptop", watts:65, surge:65, qty:1, nightPct:10, wattsTouched:false, surgeTouched:false, nightPctTouched:false},
+      {name:"Starlink dish", watts:75, surge:100, qty:1, nightPct:30, wattsTouched:false, surgeTouched:false, nightPctTouched:false}
+    ]
+  };
+
+  // Typical running & surge (starting) watts, offered as dropdown suggestions on every name field.
+  // nightPct = typical duty cycle during the backup window (overnight/early morning, when solar
+  // isn't producing) — how much of that window the appliance actually draws power, not the full
+  // recommended/naive peak. Big loads that rarely run overnight (AC, oven, dryer) get a low
+  // number; things that cycle often (fridge) or run continuously (router, CPAP) get a high one.
+  const applianceCatalog = [
+    {name:"EV charger (Level 1, 120V)", watts:1400, surge:1400, nightPct:20},
+    {name:"EV charger (Level 2, 240V)", watts:7200, surge:7200, nightPct:20},
+    {name:"Water well pump", watts:1500, surge:4500, nightPct:5},
+    {name:"Well pressure pump", watts:750, surge:2250, nightPct:5},
+    {name:"Sump pump", watts:800, surge:2400, nightPct:3},
+    {name:"Pool pump", watts:1500, surge:4500, nightPct:5},
+    {name:"Refrigerator", watts:700, surge:2200, nightPct:40},
+    {name:"Chest freezer", watts:350, surge:1500, nightPct:30},
+    {name:"Electric water heater", watts:4500, surge:4500, nightPct:10},
+    {name:"Tankless water heater", watts:18000, surge:18000, nightPct:5},
+    {name:"Electric range / oven", watts:5000, surge:5000, nightPct:2},
+    {name:"Induction cooktop (per burner)", watts:1800, surge:1800, nightPct:2},
+    {name:"Microwave", watts:1200, surge:1200, nightPct:2},
+    {name:"Dishwasher", watts:1500, surge:2000, nightPct:5},
+    {name:"Washing machine", watts:800, surge:2300, nightPct:5},
+    {name:"Electric clothes dryer", watts:5000, surge:6000, nightPct:3},
+    {name:"Window AC unit", watts:1200, surge:3600, nightPct:15},
+    {name:"Mini-split AC (1 ton)", watts:1000, surge:2200, nightPct:15},
+    {name:"Central AC (3 ton)", watts:3800, surge:11000, nightPct:15},
+    {name:"Furnace blower fan", watts:700, surge:2100, nightPct:20},
+    {name:"Space heater", watts:1500, surge:1500, nightPct:15},
+    {name:"Garage door opener", watts:600, surge:2000, nightPct:1},
+    {name:"Ceiling fan", watts:75, surge:150, nightPct:40},
+    {name:"Box fan", watts:100, surge:100, nightPct:40},
+    {name:"Hair dryer", watts:1500, surge:1500, nightPct:1},
+    {name:"Coffee maker", watts:1000, surge:1000, nightPct:2},
+    {name:"Toaster", watts:900, surge:900, nightPct:1},
+    {name:"Instant Pot / pressure cooker", watts:1000, surge:1000, nightPct:2},
+    {name:"CPAP machine", watts:60, surge:60, nightPct:70},
+    {name:"Desktop computer", watts:200, surge:200, nightPct:10},
+    {name:"Laptop", watts:65, surge:65, nightPct:10},
+    {name:"Router / modem", watts:15, surge:15, nightPct:100},
+    {name:"TV", watts:120, surge:120, nightPct:5},
+    {name:"LED lighting", watts:10, surge:10, nightPct:15},
+    {name:"Air compressor", watts:1600, surge:5500, nightPct:2},
+    {name:"Circular saw / power tool", watts:1500, surge:2800, nightPct:1},
+    {name:"RV rooftop AC (13,500 BTU)", watts:1400, surge:3600, nightPct:15},
+    {name:"RV rooftop AC (15,000 BTU)", watts:1600, surge:4000, nightPct:15},
+    {name:"RV refrigerator (12V compressor)", watts:60, surge:180, nightPct:40},
+    {name:"RV refrigerator (absorption, AC mode)", watts:300, surge:300, nightPct:40},
+    {name:"RV water pump (12V)", watts:50, surge:150, nightPct:5},
+    {name:"RV furnace fan", watts:200, surge:500, nightPct:20},
+    {name:"Roof vent fan", watts:30, surge:60, nightPct:15},
+    {name:"Slide-out motor", watts:800, surge:2000, nightPct:1},
+    {name:"Awning motor", watts:400, surge:1000, nightPct:1},
+    {name:"Starlink dish", watts:75, surge:100, nightPct:30}
+  ];
+  const catalogByName = new Map(applianceCatalog.map(c=>[c.name.toLowerCase(), c]));
+  const catalogList = document.getElementById("appliance-catalog-list");
+  applianceCatalog.forEach(c=>{
+    const opt = document.createElement("option");
+    opt.value = c.name;
+    catalogList.appendChild(opt);
+  });
+
+  // Rows saved by an earlier version of this app predate the running/surge split (or predate
+  // the wattage corrections above) and never had a chance to set the touched flags. Since an
+  // untouched row is exactly the case where auto-fill is meant to apply, re-sync any row whose
+  // name still matches a catalog entry to the current reference numbers.
+  function normalizeAppliances(list){
+    list.forEach(a=>{
+      if(typeof a.wattsTouched !== "boolean") a.wattsTouched = false;
+      if(typeof a.surgeTouched !== "boolean") a.surgeTouched = false;
+      if(typeof a.nightPctTouched !== "boolean") a.nightPctTouched = false;
+      const match = catalogByName.get((a.name||"").trim().toLowerCase());
+      if(match){
+        if(!a.wattsTouched) a.watts = match.watts;
+        if(!a.surgeTouched) a.surge = match.surge;
+        if(!a.nightPctTouched) a.nightPct = match.nightPct;
+      } else {
+        if(typeof a.surge !== "number") a.surge = a.watts;
+        if(typeof a.nightPct !== "number") a.nightPct = 20;
+      }
+    });
+    return list;
+  }
+  function loadAppliancesForMode(m){
+    const list = normalizeAppliances(loadLS("appliances:"+m, deepClone(defaultAppliancesByMode[m])));
+    saveLS("appliances:"+m, list);
+    return list;
+  }
+  let appliances = loadAppliancesForMode(mode);
+  const applianceBody = document.getElementById("appliance-body");
+  let focusNameIdx = null;
+
+  function renderAppliances(){
+    applianceBody.innerHTML = "";
+    appliances.forEach((item, idx)=>{
+      const tr = document.createElement("tr");
+
+      const nameTd = document.createElement("td");
+      const nameIn = document.createElement("input");
+      nameIn.className = "name-in"; nameIn.type = "text"; nameIn.value = item.name;
+      nameIn.id = "app-name-"+idx;
+      nameIn.setAttribute("list", "appliance-catalog-list");
+      nameIn.placeholder = "Select or type an appliance";
+      nameIn.addEventListener("input", ()=>{
+        appliances[idx].name = nameIn.value;
+        const match = catalogByName.get(nameIn.value.trim().toLowerCase());
+        if(match !== undefined){
+          if(!appliances[idx].wattsTouched) appliances[idx].watts = match.watts;
+          if(!appliances[idx].surgeTouched) appliances[idx].surge = match.surge;
+          if(!appliances[idx].nightPctTouched) appliances[idx].nightPct = match.nightPct;
+        }
+        persistAppliances();
+      });
+      nameTd.appendChild(nameIn);
+
+      const wattsTd = document.createElement("td"); wattsTd.className = "num-cell";
+      const wattsIn = document.createElement("input");
+      wattsIn.className = "w-in"; wattsIn.type = "number"; wattsIn.min = "0"; wattsIn.value = item.watts;
+      wattsIn.id = "app-watts-"+idx;
+      wattsIn.addEventListener("input", ()=>{
+        appliances[idx].watts = Math.max(0, Number(wattsIn.value)||0);
+        appliances[idx].wattsTouched = true;
+        persistAppliances();
+      });
+      wattsTd.appendChild(wattsIn);
+
+      const surgeTd = document.createElement("td"); surgeTd.className = "num-cell";
+      const surgeIn = document.createElement("input");
+      surgeIn.className = "w-in"; surgeIn.type = "number"; surgeIn.min = "0"; surgeIn.value = item.surge;
+      surgeIn.id = "app-surge-"+idx;
+      surgeIn.title = "Instantaneous peak while this item's motor/compressor starts";
+      surgeIn.addEventListener("input", ()=>{
+        appliances[idx].surge = Math.max(0, Number(surgeIn.value)||0);
+        appliances[idx].surgeTouched = true;
+        persistAppliances();
+      });
+      surgeTd.appendChild(surgeIn);
+
+      const qtyTd = document.createElement("td"); qtyTd.className = "num-cell";
+      const qtyIn = document.createElement("input");
+      qtyIn.className = "qty-in"; qtyIn.type = "number"; qtyIn.min = "0"; qtyIn.value = item.qty;
+      qtyIn.id = "app-qty-"+idx;
+      qtyIn.addEventListener("input", ()=>{ appliances[idx].qty = Math.max(0, Number(qtyIn.value)||0); persistAppliances(); });
+      qtyTd.appendChild(qtyIn);
+
+      const nightTd = document.createElement("td"); nightTd.className = "num-cell";
+      const nightIn = document.createElement("input");
+      nightIn.className = "w-in"; nightIn.type = "number"; nightIn.min = "0"; nightIn.max = "100"; nightIn.value = item.nightPct;
+      nightIn.id = "app-night-"+idx;
+      nightIn.title = "% of the overnight backup window this actually draws power — used only for battery sizing";
+      nightIn.addEventListener("input", ()=>{
+        appliances[idx].nightPct = Math.max(0, Math.min(100, Number(nightIn.value)||0));
+        appliances[idx].nightPctTouched = true;
+        persistAppliances();
+      });
+      nightTd.appendChild(nightIn);
+
+      const subTd = document.createElement("td"); subTd.className = "num-cell subtotal-cell";
+      subTd.textContent = (item.watts * item.qty).toLocaleString();
+
+      const rmTd = document.createElement("td");
+      const rmBtn = document.createElement("button");
+      rmBtn.className = "rm-btn"; rmBtn.type = "button"; rmBtn.setAttribute("aria-label","Remove "+item.name);
+      rmBtn.textContent = "✕";
+      rmBtn.addEventListener("click", ()=>{ appliances.splice(idx,1); persistAppliances(); });
+      rmTd.appendChild(rmBtn);
+
+      tr.append(nameTd, wattsTd, surgeTd, qtyTd, nightTd, subTd, rmTd);
+      applianceBody.appendChild(tr);
+    });
+
+    if(focusNameIdx !== null){
+      const target = document.getElementById("app-name-"+focusNameIdx);
+      if(target){ target.focus(); target.select(); }
+      focusNameIdx = null;
+    }
+  }
+
+  function persistAppliances(){
+    saveLS("appliances:"+mode, appliances);
+    renderAppliances();
+    computeAll();
+  }
+
+  document.getElementById("add-appliance-btn").addEventListener("click", ()=>{
+    appliances.push({name:"", watts:100, surge:100, qty:1, nightPct:20, wattsTouched:false, surgeTouched:false, nightPctTouched:false});
+    focusNameIdx = appliances.length - 1;
+    persistAppliances();
+  });
+
+  // ---------- Factors ----------
+  let factors = loadLS("factors", {cloudy:20, wiring:10});
+  const cloudyRange = document.getElementById("cloudy-range");
+  const wiringRange = document.getElementById("wiring-range");
+  cloudyRange.value = factors.cloudy;
+  wiringRange.value = factors.wiring;
+
+  [["cloudy",cloudyRange],["wiring",wiringRange]].forEach(([key, el])=>{
+    el.addEventListener("input", ()=>{
+      factors[key] = Number(el.value);
+      saveLS("factors", factors);
+      computeAll();
+    });
+  });
+
+  // ---------- Tile toggle ----------
+  const tileAdjusted = document.getElementById("tile-adjusted");
+  const factorPanel = document.getElementById("factor-panel");
+  const tileChevron = document.getElementById("tile-chevron");
+  let factorPanelOpen = loadLS("factorPanelOpen", true);
+  function applyFactorPanelState(){
+    factorPanel.style.display = factorPanelOpen ? "grid" : "none";
+    tileAdjusted.setAttribute("aria-expanded", factorPanelOpen ? "true" : "false");
+    tileChevron.textContent = factorPanelOpen ? "▾ tap to view buffers" : "▸ tap to view buffers";
+  }
+  tileAdjusted.addEventListener("click", ()=>{
+    factorPanelOpen = !factorPanelOpen;
+    saveLS("factorPanelOpen", factorPanelOpen);
+    applyFactorPanelState();
+  });
+  applyFactorPanelState();
+
+  // ---------- Panel wattage ----------
+  const panelWattOptionsByMode = {home:[350,400,450,500,550,600,650], rv:[100,160,200,300,400]};
+  const panelWattDefaultByMode = {home:450, rv:200};
+  const panelWattsInput = document.getElementById("panel-watts");
+  function loadPanelWattsForMode(m){
+    panelWattsInput.innerHTML = "";
+    panelWattOptionsByMode[m].forEach(w=>{
+      const opt = document.createElement("option");
+      opt.value = w; opt.textContent = w + " W";
+      panelWattsInput.appendChild(opt);
+    });
+    panelWattsInput.value = loadLS("panelWatts:"+m, panelWattDefaultByMode[m]);
+  }
+  loadPanelWattsForMode(mode);
+  panelWattsInput.addEventListener("change", ()=>{
+    saveLS("panelWatts:"+mode, Math.max(1, Number(panelWattsInput.value)||panelWattDefaultByMode[mode]));
+    computeAll();
+  });
+
+  // ---------- Battery ----------
+  const batteryDefaultsByMode = {
+    home: {hours:8, dod:0.9, dodIndex:0, voltage:24},
+    rv: {hours:24, dod:0.9, dodIndex:0, voltage:12}
+  };
+  const autonomyHours = document.getElementById("autonomy-hours");
+  const batteryType = document.getElementById("battery-type");
+  const bankVoltage = document.getElementById("bank-voltage");
+  let battery;
+  function loadBatteryForMode(m){
+    battery = loadLS("battery:"+m, deepClone(batteryDefaultsByMode[m]));
+    autonomyHours.value = battery.hours;
+    batteryType.selectedIndex = battery.dodIndex || 0;
+    bankVoltage.value = String(battery.voltage);
+  }
+  loadBatteryForMode(mode);
+
+  [autonomyHours, batteryType, bankVoltage].forEach(el=>{
+    el.addEventListener("input", ()=>{
+      battery = {
+        hours: Math.max(1, Number(autonomyHours.value)||1),
+        dod: Number(batteryType.value),
+        dodIndex: batteryType.selectedIndex,
+        voltage: Number(bankVoltage.value)
+      };
+      saveLS("battery:"+mode, battery);
+      computeAll();
+    });
+  });
+
+  // ---------- RV panel-fit math ----------
+  // The roof is a hard physical limit on how many panels fit — tied only to RV length and a
+  // typical roof width. RV roofs mount panels in a single row down the centerline in practice;
+  // vents, AC units, antennas and skylights scattered across the width rule out multi-row packing.
+  const MARGIN_FT = 1;
+  const RV_LENGTH_TO_USABLE = {20:12, 25:16, 30:20, 35:24, 40:28};
+  // Panel footprint scales with the wattage actually selected — a 100W flexible panel and a
+  // 400W rigid panel are very different physical sizes.
+  const PANEL_DIMS_RV_BY_WATTS = {
+    100: {w:1.6, h:3.5},
+    160: {w:1.8, h:4.8},
+    200: {w:2.2, h:4.9},
+    300: {w:3.3, h:5.4},
+    400: {w:3.3, h:6.5}
+  };
+  function getRvPanelDims(watts){
+    return PANEL_DIMS_RV_BY_WATTS[watts] || PANEL_DIMS_RV_BY_WATTS[200];
+  }
+  function computeRvPanelFit(lengthFt, widthFt, dims){
+    const usableL = Math.max(0, lengthFt - 2*MARGIN_FT);
+    const usableW = Math.max(0, widthFt - 2*MARGIN_FT);
+    let cols = 0;
+    if(dims.w <= usableW) cols = Math.max(cols, Math.floor(usableL/dims.h));
+    if(dims.h <= usableW) cols = Math.max(cols, Math.floor(usableL/dims.w));
+    return {cols, rows: cols > 0 ? 1 : 0, count: cols, usableL, usableW};
+  }
+
+  // ---------- RV roof length limit (Panels & battery card) ----------
+  const pbRvLengthFieldEl = document.getElementById("pb-rv-length-field");
+  const pbRvLengthEl = document.getElementById("pb-rv-length");
+  const pbRvFitLineEl = document.getElementById("pb-rv-fit-line");
+  const pbRvFitCountEl = document.getElementById("pb-rv-fit-count");
+  const pbRvShortfallEl = document.getElementById("pb-rv-shortfall");
+  const pbRvShortfallPctEl = document.getElementById("pb-rv-shortfall-pct");
+  const pbRvShortfallWattsEl = document.getElementById("pb-rv-shortfall-watts");
+  const pbRvBridgeBattEl = document.getElementById("pb-rv-bridge-batt");
+  const PB_RV_ROOF_WIDTH_FT = 8;
+  pbRvLengthEl.value = loadLS("pbRvLength", 30);
+  function updateRvFitDisplay(){
+    const isRv = mode === "rv";
+    pbRvLengthFieldEl.style.display = isRv ? "" : "none";
+    pbRvFitLineEl.style.display = isRv ? "" : "none";
+    if(!isRv){ pbRvShortfallEl.style.display = "none"; return; }
+    const rvFt = Number(pbRvLengthEl.value) || 30;
+    const usableLength = RV_LENGTH_TO_USABLE[rvFt] || rvFt;
+    const panelWatts = Number(panelWattsInput.value) || 200;
+    const dims = getRvPanelDims(panelWatts);
+    const layout = computeRvPanelFit(usableLength, PB_RV_ROOF_WIDTH_FT, dims);
+    pbRvFitCountEl.textContent = layout.count + " (single row, " + usableLength + " ft usable × " + PB_RV_ROOF_WIDTH_FT + " ft wide, est., " + panelWatts + "W panel footprint)";
+
+    // If the roof can't fit enough panels for the recommended load, a bigger battery can bridge
+    // occasional gaps (it stores energy already produced) but can't fix a daily production
+    // shortfall — that needs a generator, shore power, or more mounting area.
+    const panelsNeeded = Math.ceil(lastAdjustedWatts / panelWatts) || 0;
+    const fitWatts = layout.count * panelWatts;
+    const neededWatts = panelsNeeded * panelWatts;
+    if(layout.count > 0 && panelsNeeded > layout.count && neededWatts > 0){
+      pbRvShortfallEl.style.display = "flex";
+      const pct = Math.round((fitWatts / neededWatts) * 100);
+      const shortfallWatts = neededWatts - fitWatts;
+      const extraWh = shortfallWatts * battery.hours;
+      const extraCapWh = battery.dod > 0 ? extraWh / battery.dod : extraWh;
+      const extraAh = battery.voltage > 0 ? extraCapWh / battery.voltage : 0;
+      pbRvShortfallPctEl.textContent = pct + "% of the recommended load (" + fitWatts.toLocaleString() + " of " + neededWatts.toLocaleString() + " W)";
+      pbRvShortfallWattsEl.textContent = "-" + shortfallWatts.toLocaleString() + " W (" + (panelsNeeded - layout.count) + " panels short)";
+      pbRvBridgeBattEl.textContent = "+" + (extraCapWh/1000).toFixed(2) + " kWh (+" + Math.round(extraAh).toLocaleString() + " Ah) at your " + battery.hours + "-hour autonomy setting";
+    } else {
+      pbRvShortfallEl.style.display = "none";
+    }
+  }
+  pbRvLengthEl.addEventListener("change", ()=>{
+    saveLS("pbRvLength", Number(pbRvLengthEl.value));
+    updateRvFitDisplay();
+  });
+
+  // ---------- Compute ----------
+  // What counts as a "big" load scales with the system: a 1500W microwave is a big draw on an
+  // RV's power budget, but unremarkable next to a house's dryer or central AC.
+  const LARGE_LOAD_SURGE_THRESHOLD_BY_MODE = {home:5000, rv:1500};
+  const naiveValueEl = document.getElementById("naive-value");
+  const adjustedValueEl = document.getElementById("adjusted-value");
+  const combinedMultEl = document.getElementById("combined-mult");
+  const cloudyValEl = document.getElementById("cloudy-val");
+  const wiringValEl = document.getElementById("wiring-val");
+  const surgeDetailEl = document.getElementById("surge-detail");
+  const largeLoadDetailEl = document.getElementById("large-load-detail");
+  const pbPanelsAdjustedEl = document.getElementById("pb-panels-adjusted");
+  const pbPanelsNaiveEl = document.getElementById("pb-panels-naive");
+  const pbBattNightEl = document.getElementById("pb-batt-night");
+  const pbBattAhNightEl = document.getElementById("pb-batt-ah-night");
+  const pbBattRecKwhEl = document.getElementById("pb-batt-rec-kwh");
+  const pbBattRecAhEl = document.getElementById("pb-batt-rec-ah");
+  const BACKUP_RECOMMEND_MULTIPLIER = 3;
+
+  // ---------- Dashboard bar charts ----------
+  const dashSizingRecFill = document.getElementById("dash-bar-sizing-rec");
+  const dashSizingNaiveFill = document.getElementById("dash-bar-sizing-naive");
+  const dashSizingRecVal = document.getElementById("dash-val-sizing-rec");
+  const dashSizingNaiveVal = document.getElementById("dash-val-sizing-naive");
+  const dashBattRecFill = document.getElementById("dash-bar-batt-rec");
+  const dashBattBaseFill = document.getElementById("dash-bar-batt-base");
+  const dashBattRecVal = document.getElementById("dash-val-batt-rec");
+  const dashBattBaseVal = document.getElementById("dash-val-batt-base");
+  function setDashBar(fillEl, valueEl, value, maxValue, unitLabel, decimals){
+    const pct = maxValue > 0 ? Math.max(0, Math.min(100, (value/maxValue)*100)) : 0;
+    fillEl.style.width = pct + "%";
+    const shown = decimals ? value.toFixed(decimals) : Math.round(value).toLocaleString();
+    fillEl.title = shown + " " + unitLabel;
+    valueEl.textContent = shown + " " + unitLabel;
+  }
+  function renderDashboard(sizingRec, sizingNaive, battRecKwh, battBaseKwh){
+    const sizingMax = Math.max(sizingRec, sizingNaive, 1);
+    setDashBar(dashSizingRecFill, dashSizingRecVal, sizingRec, sizingMax, "W", 0);
+    setDashBar(dashSizingNaiveFill, dashSizingNaiveVal, sizingNaive, sizingMax, "W", 0);
+    const battMax = Math.max(battRecKwh, battBaseKwh, 0.01);
+    setDashBar(dashBattRecFill, dashBattRecVal, battRecKwh, battMax, "kWh", 2);
+    setDashBar(dashBattBaseFill, dashBattBaseVal, battBaseKwh, battMax, "kWh", 2);
+  }
+
+  function computeAll(){
+    const active = appliances.filter(i => (Number(i.qty)||0) > 0);
+    const isLarge = i => (Number(i.surge)||0) > LARGE_LOAD_SURGE_THRESHOLD_BY_MODE[mode];
+    const everydayItems = active.filter(i => !isLarge(i));
+    const largeItems = active.filter(isLarge);
+
+    const everydayRunning = everydayItems.reduce((s,i)=> s + (Number(i.watts)||0)*(Number(i.qty)||0), 0);
+    const gapOf = i => Math.max(0, (Number(i.surge)||0) - (Number(i.watts)||0));
+    const everydayWorstGap = everydayItems.reduce((w,i)=>{
+      const g = gapOf(i);
+      return g > w.gap ? {gap:g, name:i.name || "Unnamed item"} : w;
+    }, {gap:0, name:null});
+
+    // A household/rig won't realistically run every big-surge appliance at once (home: dryer,
+    // range, EV charger, central AC, tankless heater; RV: rooftop AC, microwave, slide-out motor)
+    // — both the raw total and the recommended sizing assume everyday loads running together
+    // plus just one big load, picking whichever single big load makes that worst-case scenario largest.
+    let naiveRunning = everydayRunning;
+    let peakGap = everydayWorstGap;
+    let chosenLarge = null;
+    let bestPeak = everydayRunning + everydayWorstGap.gap;
+
+    largeItems.forEach(L=>{
+      const lRunning = (Number(L.watts)||0)*(Number(L.qty)||0);
+      const lGap = gapOf(L);
+      const candidateGap = lGap > everydayWorstGap.gap ? {gap:lGap, name:L.name || "Unnamed item"} : everydayWorstGap;
+      const candidatePeak = everydayRunning + lRunning + candidateGap.gap;
+      if(candidatePeak > bestPeak){
+        bestPeak = candidatePeak;
+        peakGap = candidateGap;
+        chosenLarge = L;
+        naiveRunning = everydayRunning + lRunning;
+      }
+    });
+
+    const peak = naiveRunning + peakGap.gap;
+    const mult = (1 + factors.cloudy/100) * (1 + factors.wiring/100);
+    const adjusted = peak * mult;
+    lastAdjustedWatts = adjusted;
+
+    const excludedLarge = largeItems.filter(L => L !== chosenLarge);
+    if(largeItems.length === 0){
+      largeLoadDetailEl.textContent = "none in your list";
+    } else if(chosenLarge){
+      largeLoadDetailEl.textContent = chosenLarge.name + " counted (" + Math.round((Number(chosenLarge.watts)||0)*(Number(chosenLarge.qty)||0)).toLocaleString() + " W)"
+        + (excludedLarge.length ? "; " + excludedLarge.length + " excluded: " + excludedLarge.map(e=>e.name||"Unnamed item").join(", ") : "");
+    } else {
+      largeLoadDetailEl.textContent = "none currently outweigh the everyday loads";
+    }
+    surgeDetailEl.textContent = peakGap.gap > 0
+      ? ("+" + Math.round(peakGap.gap).toLocaleString() + " W (" + peakGap.name + ")")
+      : "none — no motor surges above its running watts";
+
+    naiveValueEl.textContent = Math.round(naiveRunning).toLocaleString() + " W";
+    adjustedValueEl.textContent = Math.round(adjusted).toLocaleString() + " W";
+    combinedMultEl.textContent = mult.toFixed(2) + "×";
+    cloudyValEl.textContent = factors.cloudy + "%";
+    wiringValEl.textContent = factors.wiring + "%";
+
+    // Panel count is driven by the peak sizing above — the array has to handle the worst-case
+    // instant regardless of how rarely it happens.
+    const panelWatts = Math.max(1, Number(panelWattsInput.value) || 450);
+    pbPanelsAdjustedEl.textContent = Math.ceil(adjusted / panelWatts).toLocaleString();
+    pbPanelsNaiveEl.textContent = Math.ceil(naiveRunning / panelWatts).toLocaleString();
+
+    // Battery capacity is driven by real overnight draw instead: each appliance's own running
+    // watts × quantity × its backup-duty % (from the appliance table), summed and held for the
+    // chosen autonomy window. A well pump or dryer barely factors in; a fridge or router does.
+    const nightWatts = active.reduce((sum,i)=> sum + (Number(i.watts)||0) * (Number(i.qty)||0) * ((Number(i.nightPct)||0)/100), 0);
+    const nightWh = nightWatts * battery.hours;
+    const nightCapWh = battery.dod > 0 ? nightWh / battery.dod : nightWh;
+    const nightAh = battery.voltage > 0 ? nightCapWh / battery.voltage : 0;
+    pbBattNightEl.textContent = (nightCapWh/1000).toFixed(2) + " kWh";
+    pbBattAhNightEl.textContent = Math.round(nightAh).toLocaleString() + " Ah";
+    pbBattRecKwhEl.textContent = (nightCapWh * BACKUP_RECOMMEND_MULTIPLIER / 1000).toFixed(2) + " kWh";
+    pbBattRecAhEl.textContent = Math.round(nightAh * BACKUP_RECOMMEND_MULTIPLIER).toLocaleString() + " Ah";
+
+    renderDashboard(adjusted, naiveRunning, (nightCapWh * BACKUP_RECOMMEND_MULTIPLIER)/1000, nightCapWh/1000);
+
+    updateRvFitDisplay();
+  }
+
+  // ---------- Installers ----------
+  const defaultInstallersByMode = {
+    home: [
+      {name:"Palmetto Solar", brands:"Sol-Ark, FranklinWH, Enphase", area:"Nationwide (30+ states)", contact:"palmetto.com · (855) 339-1831", price:"$3.00 – $4.20", notes:"Mid–high tier", example:true},
+      {name:"Freedom Forever", brands:"Sol-Ark, FranklinWH, Tesla", area:"Nationwide (30+ states)", contact:"freedomforever.com · (888) 557-6402", price:"$2.80 – $3.80", notes:"Mid tier", example:true},
+      {name:"Semper Solaris", brands:"Sol-Ark, FranklinWH, Enphase", area:"CA, AZ, NV, TX, FL", contact:"sempersolaris.com · (888) 210-3366", price:"$3.20 – $4.50", notes:"High tier", example:true},
+      {name:"SunPower / Authorized Dealers", brands:"FranklinWH, Maxeon, Tesla", area:"Nationwide", contact:"sunpower.com · (800) 786-7693", price:"$3.80 – $5.00", notes:"Premium tier", example:true},
+      {name:"Signature Solar / Certified Installers", brands:"EG4, Sol-Ark, Growatt", area:"Nationwide network", contact:"signaturesolar.com · (903) 441-2090", price:"$2.00 – $3.20", notes:"Budget–mid tier", example:true},
+      {name:"Local Independent Installer Networks", brands:"EG4, Sol-Ark, Sigenergy, FranklinWH, via EnergySage / CED Greentech", area:"Nationwide (by ZIP code)", contact:"energysage.com", price:"$2.50 – $4.00", notes:"Matches you to a vetted local installer", example:true}
+    ],
+    rv: [
+      {name:"Renogy", brands:"Renogy panels, controllers, batteries", area:"Nationwide — ships DIY kits", contact:"renogy.com", price:"$1.50 – $2.50", notes:"Popular DIY kit and component retailer", example:true},
+      {name:"Zamp Solar", brands:"Zamp panels, portable/plug-and-play kits", area:"Nationwide — direct + RV dealer network", contact:"zampsolar.com", price:"$2.00 – $3.50", notes:"OEM supplier for many RV manufacturers", example:true},
+      {name:"AM Solar", brands:"Custom-designed kits", area:"Nationwide ship; in-person shop in Oregon", contact:"amsolar.com", price:"$2.50 – $4.00", notes:"Custom kit design; can install at their shop", example:true},
+      {name:"Go Power!", brands:"Panels, inverters", area:"Nationwide via RV dealers & retailers", contact:"gpelectric.com", price:"$2.00 – $3.50", notes:"Common OEM/dealer-installed option on new RVs", example:true},
+      {name:"Local RV dealer / mobile RV tech", brands:"Varies", area:"Local — search by ZIP", contact:"Your RV dealership's service dept, or a mobile RV tech", price:"Varies — parts + labor", notes:"For a professional install instead of DIY", example:true}
+    ]
+  };
+  function loadInstallersForMode(m){
+    return loadLS("installers:"+m, deepClone(defaultInstallersByMode[m]));
+  }
+  let installers = loadInstallersForMode(mode);
+  const installerBody = document.getElementById("installer-body");
+  const installerFilter = document.getElementById("installer-filter");
+  installerFilter.value = loadLS("installerFilter:"+mode, "");
+  installerFilter.addEventListener("input", ()=>{
+    saveLS("installerFilter:"+mode, installerFilter.value);
+    renderInstallers();
+  });
+
+  function matchesRegionFilter(row, filterText){
+    if(!filterText) return true;
+    const f = filterText.trim().toLowerCase();
+    if(!f) return true;
+    const area = (row.area || "").toLowerCase();
+    if(area.includes("nationwide") || area.includes("national")) return true;
+    return area.includes(f) || (row.name || "").toLowerCase().includes(f);
+  }
+
+  function editableCell(value, onChange, placeholder){
+    const td = document.createElement("td");
+    const input = document.createElement("input");
+    input.type = "text"; input.className = "name-in"; input.value = value || "";
+    if(placeholder) input.placeholder = placeholder;
+    input.addEventListener("input", ()=>{ onChange(input.value); saveLS("installers:"+mode, installers); });
+    td.appendChild(input);
+    return td;
+  }
+
+  function renderInstallers(){
+    installerBody.innerHTML = "";
+    const filterText = installerFilter.value;
+    installers.forEach((row, idx)=>{
+      if(!matchesRegionFilter(row, filterText)) return;
+      const tr = document.createElement("tr");
+
+      const nameTd = editableCell(row.name, v=>row.name=v, "Installer name");
+      if(row.example){
+        const badge = document.createElement("span");
+        badge.className = "example-badge"; badge.textContent = "Example"; badge.style.marginLeft = "6px";
+        nameTd.appendChild(badge);
+      }
+
+      const brandsTd = editableCell(row.brands, v=>row.brands=v, "Brands installed");
+      const areaTd = editableCell(row.area, v=>row.area=v, "Service area");
+      const contactTd = editableCell(row.contact, v=>row.contact=v, "Website / phone");
+      const priceTd = editableCell(row.price, v=>row.price=v, "$/W range");
+      priceTd.className = "num-cell";
+      const notesTd = editableCell(row.notes, v=>row.notes=v, "Notes");
+
+      const rmTd = document.createElement("td");
+      const rmBtn = document.createElement("button");
+      rmBtn.className = "rm-btn"; rmBtn.type = "button"; rmBtn.setAttribute("aria-label","Remove "+(row.name||"installer"));
+      rmBtn.textContent = "✕";
+      rmBtn.addEventListener("click", ()=>{ installers.splice(idx,1); saveLS("installers:"+mode, installers); renderInstallers(); });
+      rmTd.appendChild(rmBtn);
+
+      tr.append(nameTd, brandsTd, areaTd, contactTd, priceTd, notesTd, rmTd);
+      installerBody.appendChild(tr);
+    });
+    if(!installerBody.children.length){
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 7;
+      td.style.cssText = "text-align:center; color:var(--ink-faint); padding:16px; font-size:13px;";
+      td.textContent = "No installers match that filter — try a broader region, or add one below.";
+      tr.appendChild(td);
+      installerBody.appendChild(tr);
+    }
+  }
+
+  document.getElementById("add-installer-btn").addEventListener("click", ()=>{
+    installers.push({name:"", brands:"", area:"", contact:"", price:"", notes:"", example:false});
+    saveLS("installers:"+mode, installers);
+    installerFilter.value = "";
+    saveLS("installerFilter:"+mode, "");
+    renderInstallers();
+  });
+
+  // ---------- Financing cards ----------
+  const financingCardsByMode = {
+    home:
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>Cash purchase</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>Full system price</dd><dt>Interest</dt><dd>None</dd><dt>Lifetime cost</dt><dd>Lowest</dd></dl>' +
+      '<div class="fin-best">Best for: households with cash on hand and a long time horizon in the home.</div></div>' +
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>Solar loan</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>$0–low down payment</dd><dt>Collateral</dt><dd>Usually unsecured, or the equipment itself</dd><dt>Term</dt><dd>Typically 10–20 years</dd></dl>' +
+      '<div class="fin-best">Best for: buyers who want ownership without paying cash upfront, at the cost of loan interest.</div></div>' +
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>Home equity loan / HELOC</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>$0</dd><dt>Collateral</dt><dd>Your home</dd><dt>Rate</dt><dd>Usually lower than an unsecured solar loan</dd></dl>' +
+      '<div class="fin-best">Best for: homeowners with equity built up who want the lowest financed rate — but a missed payment risks the house, not just the panels.</div></div>' +
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>0% APR credit card (12–18 mo)</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>$0</dd><dt>Promo window</dt><dd>Typically 12–18 months, 0% interest</dd><dt>After promo</dt><dd>Reverts to standard card APR, often 20%+</dd></dl>' +
+      '<div class="fin-best">Best for: smaller systems or a down payment you\'re confident you can pay off before the promo window closes.</div></div>',
+    rv:
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>Cash purchase</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>Full kit price</dd><dt>Interest</dt><dd>None</dd><dt>Lifetime cost</dt><dd>Lowest</dd></dl>' +
+      '<div class="fin-best">Best for: DIYers buying panels/batteries outright and self-installing.</div></div>' +
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>Retailer / manufacturer financing</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>$0–low down payment</dd><dt>Provider</dt><dd>Installment plan through the kit retailer at checkout</dd><dt>Term</dt><dd>Typically 6–24 months</dd></dl>' +
+      '<div class="fin-best">Best for: spreading out a kit purchase without a separate bank loan.</div></div>' +
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>0% APR credit card (12–18 mo)</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>$0</dd><dt>Promo window</dt><dd>Typically 12–18 months, 0% interest</dd><dt>After promo</dt><dd>Reverts to standard card APR, often 20%+</dd></dl>' +
+      '<div class="fin-best">Best for: small-to-mid kits you\'re confident you can pay off before the promo window closes.</div></div>' +
+      '<div class="fin-card"><span class="fin-tag">Ownership</span><h3>RV loan add-on / refinance</h3><dl>' +
+      '<dt>Upfront cost</dt><dd>$0</dd><dt>Mechanism</dt><dd>Roll the solar cost into a new RV loan, or refinance an existing one</dd><dt>Rate</dt><dd>Tied to the RV loan\'s own rate and term</dd></dl>' +
+      '<div class="fin-best">Best for: buyers already financing the RV who want one combined payment.</div></div>'
+  };
+  function renderFinancingCards(m){
+    document.getElementById("fin-grid").innerHTML = financingCardsByMode[m];
+  }
+
+  // ---------- Mode switching (Home vs RV) ----------
+  const modeBtnHome = document.getElementById("mode-btn-home");
+  const modeBtnRV = document.getElementById("mode-btn-rv");
+  const appTagline = document.getElementById("app-tagline");
+  const taglineByMode = {
+    home: "Tally your loads, size the system with headroom, and shop the install — one ledger for the watts and the dollars.",
+    rv: "Tally your rig's loads, size the system with headroom, and shop the kit — one ledger for the watts and the dollars."
+  };
+  const installerLabelsByMode = {
+    home: {title:"Local installers", sub:"Nationwide and regional installers with typical price-per-watt ranges — add your own local quotes alongside them."},
+    rv: {title:"RV solar kits & installers", sub:"Mostly DIY kit retailers and RV equipment brands, since RV solar rarely runs through a local installer network — many RV dealerships and mobile techs can also install for a fee."}
+  };
+  function applyModeLabels(m){
+    appTagline.textContent = taglineByMode[m];
+    document.getElementById("installer-title").textContent = installerLabelsByMode[m].title;
+    document.getElementById("installer-sub").textContent = installerLabelsByMode[m].sub;
+    const threshold = LARGE_LOAD_SURGE_THRESHOLD_BY_MODE[m].toLocaleString();
+    document.getElementById("hint-adjusted").textContent = "Everyday loads + one big load (>" + threshold + "W surge) at a time + its surge, buffered for clouds & wiring loss";
+    document.getElementById("hint-naive").textContent = "Everyday loads + one big load (>" + threshold + "W surge) running — no surge or environmental buffer added";
+    document.getElementById("large-load-label").textContent = "Big loads (>" + threshold + "W surge) — only one assumed running at a time";
+    modeBtnHome.setAttribute("aria-pressed", m === "home" ? "true" : "false");
+    modeBtnRV.setAttribute("aria-pressed", m === "rv" ? "true" : "false");
+  }
+  function switchMode(newMode){
+    if(newMode === mode) return;
+    mode = newMode;
+    saveLS("mode", mode);
+    appliances = loadAppliancesForMode(mode);
+    loadPanelWattsForMode(mode);
+    loadBatteryForMode(mode);
+    installers = loadInstallersForMode(mode);
+    installerFilter.value = loadLS("installerFilter:"+mode, "");
+    renderFinancingCards(mode);
+    applyModeLabels(mode);
+    renderAppliances();
+    renderInstallers();
+    computeAll();
+  }
+  modeBtnHome.addEventListener("click", ()=> switchMode("home"));
+  modeBtnRV.addEventListener("click", ()=> switchMode("rv"));
+  applyModeLabels(mode);
+  renderFinancingCards(mode);
+
+  // ---------- Init ----------
+  renderAppliances();
+  computeAll();
+  renderInstallers();
+  selectTab(loadLS("activeTab", "sizing"));
+})();
+</script>
