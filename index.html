@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -270,6 +270,15 @@
   .fin-card dd{margin:0; color:var(--ink);}
   .fin-best{font-size:12.5px; color:var(--ink-soft); border-top:1px dashed var(--border); padding-top:8px;}
 
+  .src-list{display:flex; flex-direction:column; border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .src-row{display:grid; grid-template-columns:150px 1fr auto; gap:12px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border); font-size:13.5px;}
+  .src-row:last-child{border-bottom:none;}
+  .src-name{font-weight:600;}
+  .src-note{color:var(--ink-soft); font-size:12.5px;}
+  .src-link{color:var(--accent); font-weight:600; text-decoration:none; white-space:nowrap;}
+  .src-link:hover{text-decoration:underline;}
+  .paid-badge{margin-left:8px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--warn); border:1px solid var(--warn); padding:1px 6px; border-radius:6px;}
+  @media (max-width:600px){ .src-row{grid-template-columns:1fr; gap:4px;} }
   .installer-toolbar{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;}
   .installer-toolbar input[type="text"]{
     border:1px solid var(--border); background:var(--surface); color:var(--ink); font-family:inherit;
@@ -332,7 +341,7 @@
         <span class="info-tip">ⓘ<span class="info-tip-bubble">Multiple cloudy days in a row, or short winter daylight, are the real constraint on true 100% off-grid living — proper load management is needed no matter how big the array or battery is.</span></span>
       </span>
       <span class="value num" id="adjusted-value">0 W</span>
-      <span class="hint" id="hint-adjusted">Everyday loads + one big load at a time + its surge, buffered for clouds &amp; wiring loss</span>
+      <span class="hint" id="hint-adjusted">Everyday loads + one big load at a time + its surge, buffered for clouds &amp; system losses</span>
       <span class="chevron" id="tile-chevron">▾ tap to view buffers</span>
     </button>
     <div class="tile tile-secondary" id="tile-naive">
@@ -362,7 +371,7 @@
       <div class="dash-chart">
         <div class="dash-chart-title">Backup capacity (kWh)</div>
         <div class="dash-bar-row">
-          <span class="dash-bar-label">Recommended (×3)</span>
+          <span class="dash-bar-label" id="dash-batt-rec-label">Recommended (×3)</span>
           <div class="dash-bar-track"><div class="dash-bar-fill dash-fill-good" id="dash-bar-batt-rec" style="width:0%" title=""></div></div>
           <span class="dash-bar-value" id="dash-val-batt-rec">0 kWh</span>
         </div>
@@ -411,6 +420,16 @@
           <option value="48">48V</option>
         </select>
       </div>
+      <div class="field">
+        <label for="backup-multiplier">Backup buffer</label>
+        <select id="backup-multiplier">
+          <option value="1">1× — no buffer</option>
+          <option value="2">2× — about 2 days</option>
+          <option value="3" selected>3× — about 3 days</option>
+          <option value="4">4×</option>
+          <option value="5">5×</option>
+        </select>
+      </div>
       <div class="field" id="pb-rv-length-field" style="display:none;">
         <label for="pb-rv-length">RV length</label>
         <select id="pb-rv-length">
@@ -447,7 +466,7 @@
 
     <div class="pb-col pb-col-primary" style="margin-top:14px;">
       <div class="pb-title">Backup capacity recommended
-        <span class="info-tip">ⓘ<span class="info-tip-bubble">3× the baseline overnight draw below, to buffer for cloudy mornings — solar isn't producing yet when you wake — and occasional heavier night use beyond the typical duty cycle.</span></span>
+        <span class="info-tip">ⓘ<span class="info-tip-bubble">The baseline overnight draw below times your chosen backup buffer (default 3×), to buffer for cloudy mornings — solar isn't producing yet when you wake — and occasional heavier night use beyond the typical duty cycle.</span></span>
       </div>
       <div class="battery-recommend-row">
         <span class="battery-recommend-value" id="pb-batt-rec-kwh">0 kWh</span>
@@ -462,15 +481,15 @@
   <div class="factor-panel" id="factor-panel">
     <div class="factor-row">
       <label>Cloudy-day buffer
-        <span class="fdesc">Extra headroom for reduced irradiance on overcast days</span>
+        <span class="fdesc">A flat margin for reduced sun on overcast days — not a site-specific calculation. If you already plan around winter sun hours, you may be double-counting.</span>
       </label>
       <span class="factor-val" id="cloudy-val">20%</span>
     </div>
     <input type="range" min="0" max="60" step="5" id="cloudy-range" style="grid-column:1/-1; accent-color:var(--accent);">
 
     <div class="factor-row">
-      <label>Wiring &amp; connection loss
-        <span class="fdesc">Resistive loss across wire runs, connectors and terminals</span>
+      <label>System losses
+        <span class="fdesc">Catch-all margin for wiring, connectors, inverter efficiency, dust and heat. Wiring alone is typically ~2%; the standard PVWatts estimate uses ~14% total losses.</span>
       </label>
       <span class="factor-val" id="wiring-val">10%</span>
     </div>
@@ -487,9 +506,11 @@
     </div>
 
     <div class="combined-line">
-      <span>Cloudy + wiring buffer applied on top</span>
+      <span>Cloudy + system-loss buffer applied on top</span>
       <b id="combined-mult">1.32×</b>
     </div>
+
+    <p class="disclaimer" style="margin:0;">Both buffers are yours to set — drag either to 0% to see the sizing with no margin at all. The Naive total above already shows your loads with no surge allowance or buffers.</p>
   </div>
 
 
@@ -529,6 +550,13 @@
       </table>
     </div>
     <p class="disclaimer">Rows marked <span class="example-badge">Example</span> are illustrative national/regional installers, not a live directory — pricing, coverage and availability change over time. Get 3+ local quotes before committing. Nationwide installers always show; the filter narrows regional ones by what you type.</p>
+  </div>
+
+  <div class="card">
+    <h2>Equipment sources</h2>
+    <p class="sub">Places to price out the kind of equipment your sizing points to. Listed alphabetically — order is not a ranking, and your sizing numbers don't change based on which vendor you pick.</p>
+    <div class="src-list" id="src-list"></div>
+    <p class="disclaimer" id="src-disclosure"></p>
   </div>
 
 </section>
@@ -981,7 +1009,15 @@
   const pbBattAhNightEl = document.getElementById("pb-batt-ah-night");
   const pbBattRecKwhEl = document.getElementById("pb-batt-rec-kwh");
   const pbBattRecAhEl = document.getElementById("pb-batt-rec-ah");
-  const BACKUP_RECOMMEND_MULTIPLIER = 3;
+  const backupMultiplierEl = document.getElementById("backup-multiplier");
+  const dashBattRecLabel = document.getElementById("dash-batt-rec-label");
+  let backupMultiplier = Number(loadLS("backupMultiplier", 3)) || 3;
+  backupMultiplierEl.value = String(backupMultiplier);
+  backupMultiplierEl.addEventListener("change", ()=>{
+    backupMultiplier = Number(backupMultiplierEl.value) || 3;
+    saveLS("backupMultiplier", backupMultiplier);
+    computeAll();
+  });
 
   // ---------- Dashboard bar charts ----------
   const dashSizingRecFill = document.getElementById("dash-bar-sizing-rec");
@@ -1082,10 +1118,11 @@
     const nightAh = battery.voltage > 0 ? nightCapWh / battery.voltage : 0;
     pbBattNightEl.textContent = (nightCapWh/1000).toFixed(2) + " kWh";
     pbBattAhNightEl.textContent = Math.round(nightAh).toLocaleString() + " Ah";
-    pbBattRecKwhEl.textContent = (nightCapWh * BACKUP_RECOMMEND_MULTIPLIER / 1000).toFixed(2) + " kWh";
-    pbBattRecAhEl.textContent = Math.round(nightAh * BACKUP_RECOMMEND_MULTIPLIER).toLocaleString() + " Ah";
+    pbBattRecKwhEl.textContent = (nightCapWh * backupMultiplier / 1000).toFixed(2) + " kWh";
+    pbBattRecAhEl.textContent = Math.round(nightAh * backupMultiplier).toLocaleString() + " Ah";
+    dashBattRecLabel.textContent = backupMultiplier === 1 ? "Recommended" : "Recommended (×" + backupMultiplier + ")";
 
-    renderDashboard(adjusted, naiveRunning, (nightCapWh * BACKUP_RECOMMEND_MULTIPLIER)/1000, nightCapWh/1000);
+    renderDashboard(adjusted, naiveRunning, (nightCapWh * backupMultiplier)/1000, nightCapWh/1000);
 
     updateRvFitDisplay();
   }
@@ -1222,6 +1259,47 @@
     document.getElementById("fin-grid").innerHTML = financingCardsByMode[m];
   }
 
+  // ---------- Equipment sources ----------
+  // Alphabetical, multi-vendor. Set paid:true on a vendor only once an affiliate agreement is in
+  // place and its tracked URL is used; the "paid link" badge and disclosure then appear automatically.
+  const equipmentSourcesByMode = {
+    home: [
+      {name:"EG4 Electronics", url:"https://eg4electronics.com", note:"48V inverters and LiFePO4 server-rack batteries; sold through distributors and installers.", paid:false},
+      {name:"Renogy", url:"https://www.renogy.com", note:"DIY panels, charge controllers and batteries, strong in 12V kits.", paid:false},
+      {name:"Signature Solar", url:"https://signaturesolar.com", note:"Online retailer of inverters, batteries and panels from several brands; offers a free design review.", paid:false},
+      {name:"Sol-Ark", url:"https://www.sol-ark.com", note:"Hybrid inverter systems, generally installed through dealers.", paid:false},
+      {name:"Victron Energy", url:"https://www.victronenergy.com", note:"12/24/48V inverters, chargers and monitoring.", paid:false}
+    ],
+    rv: [
+      {name:"Battle Born Batteries", url:"https://battlebornbatteries.com", note:"12V LiFePO4 batteries popular in RVs.", paid:false},
+      {name:"Renogy", url:"https://www.renogy.com", note:"DIY panels, charge controllers and batteries, strong in 12V kits.", paid:false},
+      {name:"Victron Energy", url:"https://www.victronenergy.com", note:"12/24V inverters, chargers and monitoring, common in RV and van builds.", paid:false},
+      {name:"Zamp Solar", url:"https://zampsolar.com", note:"RV-focused panels and plug-and-play kits.", paid:false}
+    ]
+  };
+  function renderEquipmentSources(m){
+    const list = document.getElementById("src-list");
+    const rows = equipmentSourcesByMode[m];
+    list.innerHTML = "";
+    rows.forEach(r=>{
+      const row = document.createElement("div"); row.className = "src-row";
+      const name = document.createElement("div"); name.className = "src-name"; name.textContent = r.name;
+      if(r.paid){
+        const badge = document.createElement("span"); badge.className = "paid-badge"; badge.textContent = "paid link";
+        name.appendChild(badge);
+      }
+      const note = document.createElement("div"); note.className = "src-note"; note.textContent = r.note;
+      const a = document.createElement("a"); a.className = "src-link"; a.href = r.url; a.target = "_blank";
+      a.rel = r.paid ? "noopener sponsored" : "noopener"; a.textContent = "Visit site ↗";
+      row.append(name, note, a);
+      list.appendChild(row);
+    });
+    const anyPaid = rows.some(r => r.paid);
+    document.getElementById("src-disclosure").textContent = anyPaid
+      ? "Links marked “paid link” may earn Sunledger a commission at no extra cost to you. Unmarked links earn nothing."
+      : "Sunledger doesn't currently earn anything from these links. If that changes, any affected link will be marked “paid link” right beside it.";
+  }
+
   // ---------- Mode switching (Home vs RV) ----------
   const modeBtnHome = document.getElementById("mode-btn-home");
   const modeBtnRV = document.getElementById("mode-btn-rv");
@@ -1239,7 +1317,7 @@
     document.getElementById("installer-title").textContent = installerLabelsByMode[m].title;
     document.getElementById("installer-sub").textContent = installerLabelsByMode[m].sub;
     const threshold = LARGE_LOAD_SURGE_THRESHOLD_BY_MODE[m].toLocaleString();
-    document.getElementById("hint-adjusted").textContent = "Everyday loads + one big load (>" + threshold + "W surge) at a time + its surge, buffered for clouds & wiring loss";
+    document.getElementById("hint-adjusted").textContent = "Everyday loads + one big load (>" + threshold + "W surge) at a time + its surge, buffered for clouds & system losses";
     document.getElementById("hint-naive").textContent = "Everyday loads + one big load (>" + threshold + "W surge) running — no surge or environmental buffer added";
     document.getElementById("large-load-label").textContent = "Big loads (>" + threshold + "W surge) — only one assumed running at a time";
     modeBtnHome.setAttribute("aria-pressed", m === "home" ? "true" : "false");
@@ -1255,6 +1333,7 @@
     installers = loadInstallersForMode(mode);
     installerFilter.value = loadLS("installerFilter:"+mode, "");
     renderFinancingCards(mode);
+    renderEquipmentSources(mode);
     applyModeLabels(mode);
     renderAppliances();
     renderInstallers();
@@ -1264,6 +1343,7 @@
   modeBtnRV.addEventListener("click", ()=> switchMode("rv"));
   applyModeLabels(mode);
   renderFinancingCards(mode);
+  renderEquipmentSources(mode);
 
   // ---------- Init ----------
   renderAppliances();
